@@ -7,6 +7,7 @@ import '../../constants/app_colors.dart';
 import '../../models/product.dart';
 import '../../providers/app_state_provider.dart';
 import '../../screens/product/product_details_screen.dart';
+import '../../utils/currency.dart';
 
 class ProductListTile extends StatelessWidget {
   const ProductListTile({super.key, required this.product, this.showFavorite = false});
@@ -36,7 +37,7 @@ class ProductListTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w800)),
-                  Text('1kg · Farm raised', style: TextStyle(fontSize: 10.sp, color: AppColors.textMuted)),
+                  Text('1 kg | Farm raised', style: TextStyle(fontSize: 10.sp, color: AppColors.textMuted)),
                   Row(
                     children: [
                       Icon(Icons.star, color: AppColors.accent, size: 13.sp),
@@ -49,7 +50,7 @@ class ProductListTile extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('\$${product.price.toStringAsFixed(2)}', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 12.sp)),
+                Text(formatEgp(product.price), style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 12.sp)),
                 SizedBox(height: 5.h),
                 if (showFavorite)
                   IconButton.filled(

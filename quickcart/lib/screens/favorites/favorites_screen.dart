@@ -11,33 +11,65 @@ import '../../widgets/common/section_header.dart';
 import '../../widgets/navigation/quick_bottom_nav.dart';
 import '../../widgets/product/product_card.dart';
 import '../../widgets/product/product_list_tile.dart';
+import '../category/category_screen.dart';
 
-class FavoritesScreen extends StatelessWidget {
+class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key, this.showNav = true});
 
   static const routeName = '/favorites';
   final bool showNav;
 
   @override
+  State<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+class _FavoritesScreenState extends State<FavoritesScreen> {
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
-    final favorites = context.watch<AppStateProvider>().favoriteProducts;
+    final favorites = context.watch<AppStateProvider>().favoriteProducts.where((
+      product,
+    ) {
+      final query = _query.toLowerCase();
+      return query.isEmpty ||
+          product.name.toLowerCase().contains(query) ||
+          product.category.toLowerCase().contains(query);
+    }).toList();
     return Scaffold(
-      bottomNavigationBar: showNav ? const QuickBottomNav() : null,
+      bottomNavigationBar: widget.showNav ? const QuickBottomNav() : null,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _FavoritesHeader(count: favorites.length)),
+            SliverToBoxAdapter(
+              child: _FavoritesHeader(count: favorites.length),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(18.w, 14.h, 18.w, 8.h),
-                child: const QuickSearchField(hint: 'Search favorites...'),
+                child: QuickSearchField(
+                  hint: 'Search favorites...',
+                  onChanged: (value) => setState(() => _query = value),
+                ),
               ),
             ),
             SliverList.builder(
               itemCount: favorites.length,
-              itemBuilder: (_, index) => ProductListTile(product: favorites[index], showFavorite: true),
+              itemBuilder: (_, index) => ProductListTile(
+                product: favorites[index],
+                showFavorite: true,
+              ),
             ),
-            const SliverToBoxAdapter(child: SectionHeader(title: 'Recently Viewed', action: null)),
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: 'Recently Viewed',
+                onActionTap: () => Navigator.pushNamed(
+                  context,
+                  CategoryScreen.routeName,
+                  arguments: 'all',
+                ),
+              ),
+            ),
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 182.h,
@@ -46,13 +78,21 @@ class FavoritesScreen extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   itemCount: 3,
                   separatorBuilder: (context, index) => SizedBox(width: 12.w),
-                  itemBuilder: (_, index) => ProductCard(product: DummyData.products[index + 1], compact: true),
+                  itemBuilder: (_, index) => ProductCard(
+                    product: DummyData.products[index + 1],
+                    compact: true,
+                  ),
                 ),
               ),
             ),
             SliverToBoxAdapter(child: SizedBox(height: 14.h)),
-            const SliverToBoxAdapter(
-              child: PromoBanner(title: 'New Chocolate Bars\nJust Dropped!', subtitle: 'Grab now at a huge discount', icon: Icons.cookie),
+            SliverToBoxAdapter(
+              child: PromoBanner(
+                title: 'New Chocolate Bars\nJust Dropped!',
+                subtitle: 'Grab now at a huge discount',
+                icon: Icons.cookie,
+                onTap: () => setState(() => _query = 'chocolate'),
+              ),
             ),
             SliverToBoxAdapter(child: SizedBox(height: 20.h)),
           ],
@@ -72,7 +112,9 @@ class _FavoritesHeader extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(18.w, 16.h, 18.w, 18.h),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark]),
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+        ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28.r)),
       ),
       child: Row(
@@ -80,14 +122,38 @@ class _FavoritesHeader extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('My Favorites', style: TextStyle(color: Colors.white70, fontSize: 11.sp)),
-              Text('Saved Items', style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900)),
+              Text(
+                'My Favorites',
+                style: TextStyle(color: Colors.white70, fontSize: 11.sp),
+              ),
+              Text(
+                'Saved Items',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ],
           ),
           const Spacer(),
-          Chip(label: Text('$count items'), backgroundColor: AppColors.accent, labelStyle: const TextStyle(color: Colors.white)),
+          Chip(
+            label: Text('$count items'),
+            backgroundColor: AppColors.accent,
+            labelStyle: const TextStyle(color: Colors.white),
+          ),
           SizedBox(width: 8.w),
-          const Icon(Icons.filter_alt_outlined, color: Colors.white),
+          IconButton(
+            tooltip: 'Sale items',
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Showing your saved items. Search by name or category to filter them.',
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.filter_alt_outlined, color: Colors.white),
+          ),
         ],
       ),
     );

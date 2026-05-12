@@ -12,9 +12,13 @@ class CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final routeCategory = switch (category.name) {
+      'Veggies' => 'vegetables',
+      _ => category.name.toLowerCase(),
+    };
     return InkWell(
       borderRadius: BorderRadius.circular(16.r),
-      onTap: () => Navigator.pushNamed(context, CategoryScreen.routeName, arguments: category.name.toLowerCase()),
+      onTap: () => Navigator.pushNamed(context, CategoryScreen.routeName, arguments: routeCategory),
       child: Container(
         decoration: BoxDecoration(color: category.color, borderRadius: BorderRadius.circular(16.r)),
         child: Column(

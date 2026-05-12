@@ -7,6 +7,7 @@ import '../../constants/app_colors.dart';
 import '../../models/product.dart';
 import '../../providers/app_state_provider.dart';
 import '../../screens/product/product_details_screen.dart';
+import '../../utils/currency.dart';
 
 class ProductCard extends StatelessWidget {
   const ProductCard({super.key, required this.product, this.compact = false, this.heroEnabled = true});
@@ -73,7 +74,7 @@ class ProductCard extends StatelessWidget {
             Text('1 kg', style: TextStyle(fontSize: 10.sp, color: AppColors.textMuted)),
             Row(
               children: [
-                Text('\$${product.price.toStringAsFixed(2)}', style: TextStyle(color: AppColors.primary, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                Text(formatEgp(product.price), style: TextStyle(color: AppColors.primary, fontSize: 12.sp, fontWeight: FontWeight.w900)),
                 const Spacer(),
                 SizedBox(
                   width: 28.w,

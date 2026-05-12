@@ -7,8 +7,10 @@ import '../../constants/app_colors.dart';
 import '../../data/dummy_data.dart';
 import '../../models/product.dart';
 import '../../providers/app_state_provider.dart';
+import '../../utils/currency.dart';
 import '../../widgets/common/section_header.dart';
 import '../../widgets/product/product_card.dart';
+import '../category/category_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key, required this.productId});
@@ -25,8 +27,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final product = DummyData.products.firstWhere((item) => item.id == widget.productId);
-    final related = DummyData.products.where((item) => item.category == product.category && item.id != product.id).toList();
+    final product = DummyData.products.firstWhere(
+      (item) => item.id == widget.productId,
+    );
+    final related = DummyData.products
+        .where(
+          (item) => item.category == product.category && item.id != product.id,
+        )
+        .toList();
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -42,34 +50,72 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(product.name, style: TextStyle(fontSize: 27.sp, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+                          child: Text(
+                            product.name,
+                            style: TextStyle(
+                              fontSize: 27.sp,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textDark,
+                            ),
+                          ),
                         ),
-                        Text('\$${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 22.sp, color: AppColors.primary, fontWeight: FontWeight.w900)),
+                        Text(
+                          formatEgp(product.price),
+                          style: TextStyle(
+                            fontSize: 22.sp,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                       ],
                     ),
                     SizedBox(height: 6.h),
                     Row(
                       children: [
                         const Icon(Icons.star, color: AppColors.accent),
-                        Text(' ${product.rating}  ·  Fresh ${product.category}', style: TextStyle(color: AppColors.textMuted, fontSize: 12.sp)),
+                        Text(
+                          ' ${product.rating}  |  Fresh ${product.category}',
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 12.sp,
+                          ),
+                        ),
                       ],
                     ),
                     SizedBox(height: 18.h),
-                    Text('Description', style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w900)),
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 17.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                     SizedBox(height: 6.h),
-                    Text(product.description, style: TextStyle(color: AppColors.textMuted, fontSize: 13.sp, height: 1.55)),
+                    Text(
+                      product.description,
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 13.sp,
+                        height: 1.55,
+                      ),
+                    ),
                     SizedBox(height: 20.h),
                     Row(
                       children: [
                         _QuantitySelector(
                           quantity: quantity,
-                          onMinus: () => setState(() => quantity = quantity > 1 ? quantity - 1 : 1),
+                          onMinus: () => setState(
+                            () => quantity = quantity > 1 ? quantity - 1 : 1,
+                          ),
                           onPlus: () => setState(() => quantity++),
                         ),
                         SizedBox(width: 14.w),
                         Expanded(
                           child: FilledButton.icon(
-                            style: FilledButton.styleFrom(backgroundColor: AppColors.primary, padding: EdgeInsets.symmetric(vertical: 16.h)),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: EdgeInsets.symmetric(vertical: 16.h),
+                            ),
                             onPressed: () {
                               final provider = context.read<AppStateProvider>();
                               for (var i = 0; i < quantity; i++) {
@@ -86,7 +132,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SectionHeader(title: 'Related Products')),
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: 'Related Products',
+                onActionTap: () => Navigator.pushNamed(
+                  context,
+                  CategoryScreen.routeName,
+                  arguments: product.category,
+                ),
+              ),
+            ),
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 190.h,
@@ -96,7 +151,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   itemCount: related.isEmpty ? 3 : related.length,
                   separatorBuilder: (context, index) => SizedBox(width: 12.w),
                   itemBuilder: (_, index) => ProductCard(
-                    product: related.isEmpty ? DummyData.products[index] : related[index],
+                    product: related.isEmpty
+                        ? DummyData.products[index]
+                        : related[index],
                     compact: true,
                   ),
                 ),
@@ -146,7 +203,10 @@ class _ImageHeader extends StatelessWidget {
               return IconButton.filled(
                 style: IconButton.styleFrom(backgroundColor: Colors.white),
                 onPressed: () => provider.toggleFavorite(product.id),
-                icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border, color: Colors.red),
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: Colors.red,
+                ),
               );
             },
           ),
@@ -157,7 +217,11 @@ class _ImageHeader extends StatelessWidget {
 }
 
 class _QuantitySelector extends StatelessWidget {
-  const _QuantitySelector({required this.quantity, required this.onMinus, required this.onPlus});
+  const _QuantitySelector({
+    required this.quantity,
+    required this.onMinus,
+    required this.onPlus,
+  });
 
   final int quantity;
   final VoidCallback onMinus;
@@ -167,13 +231,19 @@ class _QuantitySelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(6.w),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18.r)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+      ),
       child: Row(
         children: [
           _QuantityButton(icon: Icons.remove, onTap: onMinus),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 14.w),
-            child: Text('$quantity', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w900)),
+            child: Text(
+              '$quantity',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w900),
+            ),
           ),
           _QuantityButton(icon: Icons.add, onTap: onPlus),
         ],

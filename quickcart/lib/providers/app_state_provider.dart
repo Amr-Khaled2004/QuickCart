@@ -5,21 +5,39 @@ import '../models/product.dart';
 
 class AppStateProvider extends ChangeNotifier {
   int _tabIndex = 0;
+  String _userName = 'Guest';
+  String _userEmail = '';
   final Set<String> _favorites = {'p2', 'p3', 'p9'};
-  final Map<String, int> _cart = {'p1': 1, 'p5': 2, 'p4': 1};
+  final Map<String, int> _cart = {};
+  final List<String> _orders = [];
 
   int get tabIndex => _tabIndex;
+  String get userName => _userName;
+  String get userEmail => _userEmail;
   Set<String> get favorites => _favorites;
   Map<String, int> get cart => _cart;
+  List<String> get orders => _orders;
+  int get cartItemCount =>
+      _cart.values.fold(0, (sum, quantity) => sum + quantity);
+  int get orderCount => _orders.length;
+  int get points => _orders.length * 20;
 
-  List<Product> get favoriteProducts =>
-      DummyData.products.where((product) => _favorites.contains(product.id)).toList();
+  List<Product> get favoriteProducts => DummyData.products
+      .where((product) => _favorites.contains(product.id))
+      .toList();
 
-  List<Product> get cartProducts =>
-      DummyData.products.where((product) => _cart.containsKey(product.id)).toList();
+  List<Product> get cartProducts => DummyData.products
+      .where((product) => _cart.containsKey(product.id))
+      .toList();
 
   void setTab(int index) {
     _tabIndex = index;
+    notifyListeners();
+  }
+
+  void setUser({required String name, required String email}) {
+    _userName = name.trim().isEmpty ? email.split('@').first : name.trim();
+    _userEmail = email.trim();
     notifyListeners();
   }
 
