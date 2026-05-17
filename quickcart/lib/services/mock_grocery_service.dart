@@ -6,5 +6,6 @@ class MockGroceryService {
 
   List<Product> getProducts() => DummyData.products;
 
-  List<Product> getProductsByCategory(String category) => DummyData.byCategory(category);
+  List<Product> getProductsByCategory(String category) =>
+      DummyData.byCategory(category);
 }

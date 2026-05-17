@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_colors.dart';
-import '../../data/dummy_data.dart';
 import '../../providers/app_state_provider.dart';
 import '../../widgets/common/promo_banner.dart';
 import '../../widgets/common/quick_search_field.dart';
@@ -12,6 +11,7 @@ import '../../widgets/navigation/quick_bottom_nav.dart';
 import '../../widgets/product/product_card.dart';
 import '../../widgets/product/product_list_tile.dart';
 import '../category/category_screen.dart';
+import '../deals/deal_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key, this.showNav = true});
@@ -76,10 +76,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 child: ListView.separated(
                   padding: EdgeInsets.symmetric(horizontal: 18.w),
                   scrollDirection: Axis.horizontal,
-                  itemCount: 3,
+                  itemCount: context
+                      .watch<AppStateProvider>()
+                      .products
+                      .take(3)
+                      .length,
                   separatorBuilder: (context, index) => SizedBox(width: 12.w),
                   itemBuilder: (_, index) => ProductCard(
-                    product: DummyData.products[index + 1],
+                    product: context.watch<AppStateProvider>().products[index],
                     compact: true,
                   ),
                 ),
@@ -91,7 +95,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 title: 'New Chocolate Bars\nJust Dropped!',
                 subtitle: 'Grab now at a huge discount',
                 icon: Icons.cookie,
-                onTap: () => setState(() => _query = 'chocolate'),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  DealScreen.routeName,
+                  arguments: 'chocolate',
+                ),
               ),
             ),
             SliverToBoxAdapter(child: SizedBox(height: 20.h)),

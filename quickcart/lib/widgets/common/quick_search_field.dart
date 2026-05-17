@@ -30,8 +30,14 @@ class QuickSearchField extends StatelessWidget {
       textInputAction: textInputAction,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: light ? Colors.white70 : AppColors.textMuted, fontSize: 12.sp),
-        prefixIcon: Icon(Icons.search, color: light ? Colors.white70 : AppColors.primary),
+        hintStyle: TextStyle(
+          color: light ? Colors.white70 : AppColors.textMuted,
+          fontSize: 12.sp,
+        ),
+        prefixIcon: Icon(
+          Icons.search,
+          color: light ? Colors.white70 : AppColors.primary,
+        ),
         filled: true,
         fillColor: light ? Colors.white.withValues(alpha: 0.16) : Colors.white,
         border: OutlineInputBorder(

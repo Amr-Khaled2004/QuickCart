@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/app_state_provider.dart';
 import '../../widgets/common/app_logo.dart';
 import '../../widgets/common/gradient_background.dart';
+import '../home/home_shell.dart';
 import '../auth/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,7 +18,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fade;
   Timer? _navigationTimer;
@@ -23,10 +27,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..forward();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
     _navigationTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) Navigator.pushReplacementNamed(context, LoginScreen.routeName);
+      if (mounted) {
+        final provider = context.read<AppStateProvider>();
+        Navigator.pushReplacementNamed(
+          context,
+          provider.isLoggedIn ? HomeShell.routeName : LoginScreen.routeName,
+        );
+      }
     });
   }
 
@@ -41,9 +54,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return const Scaffold(
       body: GradientBackground(
-        child: SafeArea(
-          child: Center(child: _AnimatedLogo()),
-        ),
+        child: SafeArea(child: Center(child: _AnimatedLogo())),
       ),
     );
   }
@@ -55,9 +66,6 @@ class _AnimatedLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.findAncestorStateOfType<_SplashScreenState>()!;
-    return FadeTransition(
-      opacity: state._fade,
-      child: const AppLogo(),
-    );
+    return FadeTransition(opacity: state._fade, child: const AppLogo());
   }
 }

@@ -16,7 +16,12 @@ class HomeShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final index = context.watch<AppStateProvider>().tabIndex;
-    const pages = [HomeScreen(), CartScreen(showNav: false), FavoritesScreen(showNav: false), ProfileScreen(showNav: false)];
+    const pages = [
+      HomeScreen(),
+      CartScreen(showNav: false),
+      FavoritesScreen(showNav: false),
+      ProfileScreen(showNav: false),
+    ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
       bottomNavigationBar: const QuickBottomNav(),

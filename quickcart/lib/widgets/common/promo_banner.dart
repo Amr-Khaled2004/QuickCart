@@ -21,20 +21,22 @@ class PromoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24.r),
+      borderRadius: BorderRadius.circular(22.r),
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 18.w),
-        padding: EdgeInsets.all(14.w),
+        margin: EdgeInsets.symmetric(horizontal: 4.w),
+        padding: EdgeInsets.fromLTRB(18.w, 16.h, 16.w, 16.h),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(22.r),
           gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [AppColors.primary, AppColors.primaryDark],
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.25),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
+              color: AppColors.primaryDark.withValues(alpha: 0.28),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
@@ -47,7 +49,7 @@ class PromoBanner extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: 9.w,
-                      vertical: 4.h,
+                      vertical: 5.h,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.accent,
@@ -55,36 +57,40 @@ class PromoBanner extends StatelessWidget {
                     ),
                     child: Text(
                       'Exclusive Deal!',
-                      style: TextStyle(color: Colors.white, fontSize: 10.sp),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                  SizedBox(height: 6.h),
+                  SizedBox(height: 8.h),
                   Text(
                     title,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 19.sp,
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.w900,
-                      height: 1.05,
+                      height: 1.08,
                     ),
                   ),
-                  SizedBox(height: 3.h),
+                  SizedBox(height: 5.h),
                   Text(
                     subtitle,
-                    style: TextStyle(color: Colors.white70, fontSize: 11.sp),
+                    style: TextStyle(color: Colors.white70, fontSize: 12.sp),
                   ),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: 10.h),
                   FilledButton(
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.accent,
-                      minimumSize: Size(88.w, 30.h),
-                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                      minimumSize: Size(104.w, 34.h),
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
                     ),
                     onPressed: onTap,
                     child: Text(
                       'Grab it now!',
                       style: TextStyle(
-                        fontSize: 11.sp,
+                        fontSize: 11.5.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -92,7 +98,15 @@ class PromoBanner extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(icon, color: Colors.white, size: 76.sp),
+            Container(
+              width: 86.w,
+              height: 86.w,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 52.sp),
+            ),
           ],
         ),
       ),

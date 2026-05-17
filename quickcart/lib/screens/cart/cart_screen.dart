@@ -4,11 +4,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_colors.dart';
-import '../../data/dummy_data.dart';
 import '../../providers/app_state_provider.dart';
 import '../../utils/currency.dart';
 import '../../widgets/common/quick_search_field.dart';
 import '../../widgets/navigation/quick_bottom_nav.dart';
+import '../payment/payment_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key, this.showNav = true});
@@ -19,11 +19,8 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppStateProvider>();
-    final products = provider.cartProducts;
-    final subtotal = products.fold<double>(
-      0,
-      (sum, item) => sum + item.price * (provider.cart[item.id] ?? 1),
-    );
+    final items = provider.cartItems;
+    final subtotal = provider.cartSubtotal;
     return Scaffold(
       bottomNavigationBar: showNav ? const QuickBottomNav() : null,
       body: SafeArea(
@@ -50,7 +47,7 @@ class CartScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 12.h),
-            if (products.isEmpty)
+            if (items.isEmpty)
               Padding(
                 padding: EdgeInsets.all(18.w),
                 child: Container(
@@ -88,12 +85,12 @@ class CartScreen extends StatelessWidget {
                 ),
               )
             else
-              for (final product in products) _CartItem(productId: product.id),
+              for (final item in items) _CartItem(productId: item.productId),
             Padding(
               padding: EdgeInsets.all(18.w),
               child: const QuickSearchField(hint: 'Enter promo code'),
             ),
-            _Summary(subtotal: subtotal),
+            _Summary(subtotal: subtotal, delivery: provider.deliveryFee),
             Padding(
               padding: EdgeInsets.all(18.w),
               child: FilledButton(
@@ -101,13 +98,10 @@ class CartScreen extends StatelessWidget {
                   backgroundColor: AppColors.primary,
                   padding: EdgeInsets.symmetric(vertical: 16.h),
                 ),
-                onPressed: products.isEmpty
+                onPressed: items.isEmpty
                     ? null
-                    : () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Checkout is ready for payment setup.'),
-                        ),
-                      ),
+                    : () =>
+                          Navigator.pushNamed(context, PaymentScreen.routeName),
                 child: const Text('Checkout'),
               ),
             ),
@@ -126,10 +120,10 @@ class _CartItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppStateProvider>();
-    final product = DummyData.products.firstWhere(
-      (item) => item.id == productId,
+    final item = provider.cartItems.firstWhere(
+      (item) => item.productId == productId,
     );
-    final quantity = provider.cart[productId] ?? 1;
+    final quantity = item.quantity;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 18.w, vertical: 6.h),
       padding: EdgeInsets.all(10.w),
@@ -142,7 +136,7 @@ class _CartItem extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12.r),
             child: CachedNetworkImage(
-              imageUrl: product.image,
+              imageUrl: item.imageUrl,
               width: 62.w,
               height: 62.w,
               fit: BoxFit.cover,
@@ -154,14 +148,14 @@ class _CartItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.name,
+                  item.name,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 Text(
-                  formatEgp(product.price),
+                  formatEgp(item.price),
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -223,13 +217,13 @@ class _QtyButton extends StatelessWidget {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.subtotal});
+  const _Summary({required this.subtotal, required this.delivery});
 
   final double subtotal;
+  final double delivery;
 
   @override
   Widget build(BuildContext context) {
-    final delivery = subtotal == 0 ? 0.0 : 2.50;
     final total = subtotal + delivery;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 18.w),

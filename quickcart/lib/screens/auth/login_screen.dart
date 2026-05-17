@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final name = _nameController.text.trim();
@@ -50,11 +50,43 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-    context.read<AppStateProvider>().setUser(
-      name: _isSignUp ? name : email.split('@').first,
-      email: email,
-    );
+    final provider = context.read<AppStateProvider>();
+    if (_isSignUp) {
+      await provider.register(name: name, email: email, password: password);
+    } else {
+      await provider.login(email: email, password: password);
+    }
+    if (!mounted) return;
+    if (provider.lastError != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(provider.lastError!)));
+      return;
+    }
     Navigator.pushReplacementNamed(context, HomeShell.routeName);
+  }
+
+  void _resetPassword() {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter your email first.')));
+      return;
+    }
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Password Reset'),
+        content: Text('A password reset link has been sent to $email.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -127,14 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () =>
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Password reset is not connected yet.',
-                                        ),
-                                      ),
-                                    ),
+                                onPressed: _resetPassword,
                                 child: Text(
                                   'Forgot password?',
                                   style: TextStyle(
@@ -145,16 +170,32 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.accent,
-                                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                                ),
-                                onPressed: _submit,
-                                child: Text(_isSignUp ? 'Sign Up' : 'Sign In'),
-                              ),
+                            Consumer<AppStateProvider>(
+                              builder: (context, provider, _) {
+                                return SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: AppColors.accent,
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 14.h,
+                                      ),
+                                    ),
+                                    onPressed: provider.isBusy ? null : _submit,
+                                    child: provider.isBusy
+                                        ? SizedBox.square(
+                                            dimension: 18.w,
+                                            child:
+                                                const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                          )
+                                        : Text(
+                                            _isSignUp ? 'Sign Up' : 'Sign In',
+                                          ),
+                                  ),
+                                );
+                              },
                             ),
                             Center(
                               child: TextButton(

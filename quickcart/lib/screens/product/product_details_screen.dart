@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_colors.dart';
-import '../../data/dummy_data.dart';
 import '../../models/product.dart';
 import '../../providers/app_state_provider.dart';
 import '../../utils/currency.dart';
@@ -27,10 +26,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final product = DummyData.products.firstWhere(
-      (item) => item.id == widget.productId,
-    );
-    final related = DummyData.products
+    final provider = context.watch<AppStateProvider>();
+    final product = provider.productById(widget.productId);
+    if (product == null) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: Text('Product not found.'))),
+      );
+    }
+    final related = provider.products
         .where(
           (item) => item.category == product.category && item.id != product.id,
         )
@@ -117,10 +120,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               padding: EdgeInsets.symmetric(vertical: 16.h),
                             ),
                             onPressed: () {
-                              final provider = context.read<AppStateProvider>();
-                              for (var i = 0; i < quantity; i++) {
-                                provider.addToCart(product.id);
-                              }
+                              context.read<AppStateProvider>().addToCart(
+                                product.id,
+                                quantity: quantity,
+                              );
                             },
                             icon: const Icon(Icons.shopping_cart_outlined),
                             label: const Text('Add to cart'),
@@ -148,14 +151,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 child: ListView.separated(
                   padding: EdgeInsets.symmetric(horizontal: 18.w),
                   scrollDirection: Axis.horizontal,
-                  itemCount: related.isEmpty ? 3 : related.length,
+                  itemCount: related.length,
                   separatorBuilder: (context, index) => SizedBox(width: 12.w),
-                  itemBuilder: (_, index) => ProductCard(
-                    product: related.isEmpty
-                        ? DummyData.products[index]
-                        : related[index],
-                    compact: true,
-                  ),
+                  itemBuilder: (_, index) =>
+                      ProductCard(product: related[index], compact: true),
                 ),
               ),
             ),

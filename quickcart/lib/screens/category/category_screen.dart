@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_colors.dart';
-import '../../data/dummy_data.dart';
 import '../../models/product.dart';
 import '../../providers/app_state_provider.dart';
 import '../../widgets/common/cart_icon_button.dart';
@@ -35,11 +34,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
   Widget build(BuildContext context) {
     final arg = ModalRoute.of(context)?.settings.arguments as String?;
     final category = arg ?? 'fruits';
-    final baseProducts = category == 'all' || category == 'organic'
-        ? DummyData.products
-        : DummyData.byCategory(category).isEmpty
-        ? DummyData.products
-        : DummyData.byCategory(category);
+    final provider = context.watch<AppStateProvider>();
+    final categoryProducts = provider.productsByCategory(category);
+    final baseProducts = categoryProducts.isEmpty && category != 'all'
+        ? provider.products
+        : categoryProducts;
     final query = _query.toLowerCase();
     final products = baseProducts.where((product) {
       final matchesSearch =

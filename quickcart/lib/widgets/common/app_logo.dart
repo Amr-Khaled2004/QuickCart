@@ -26,7 +26,10 @@ class AppLogo extends StatelessWidget {
             ),
             children: const [
               TextSpan(text: 'Quick\n'),
-              TextSpan(text: 'Cart', style: TextStyle(color: AppColors.accent)),
+              TextSpan(
+                text: 'Cart',
+                style: TextStyle(color: AppColors.accent),
+              ),
             ],
           ),
         ),

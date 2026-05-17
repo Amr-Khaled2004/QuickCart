@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "165943096205",
+    "project_id": "quickcarttdanyi",
+    "storage_bucket": "quickcarttdanyi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165943096205:android:94b35fa92015c2b86143c4",
+        "android_client_info": {
+          "package_name": "com.example.quickcart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcjsd9Pwy9uMlnrMtYl7orjLBPXW1mJNU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
