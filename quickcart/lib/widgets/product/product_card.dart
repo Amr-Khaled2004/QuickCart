@@ -15,14 +15,18 @@ class ProductCard extends StatelessWidget {
     required this.product,
     this.compact = false,
     this.heroEnabled = true,
+    this.showAddButton = true,
   });
 
   final Product product;
   final bool compact;
   final bool heroEnabled;
+  final bool showAddButton;
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<AppStateProvider>();
+    final canAdd = provider.canAddToCart(product.id);
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final imageWidth = ((compact ? 150.w : 180.w) * pixelRatio).round();
     return InkWell(
@@ -50,10 +54,8 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Stack(
-                children: [
-                  if (heroEnabled)
-                    Hero(
+              child: heroEnabled
+                  ? Hero(
                       tag: 'product-${product.id}',
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(14.r),
@@ -77,8 +79,7 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     )
-                  else
-                    ClipRRect(
+                  : ClipRRect(
                       borderRadius: BorderRadius.circular(14.r),
                       child: CachedNetworkImage(
                         imageUrl: product.image,
@@ -99,31 +100,6 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (product.discount > 0)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 7.w,
-                          vertical: 3.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.danger,
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Text(
-                          '${product.discount}%',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.5.sp,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
             ),
             SizedBox(height: 10.h),
             Text(
@@ -134,7 +110,7 @@ class ProductCard extends StatelessWidget {
             ),
             SizedBox(height: 2.h),
             Text(
-              '1 kg',
+              product.stock > 0 ? 'Stock: ${product.stock}' : 'Out of stock',
               style: TextStyle(fontSize: 10.5.sp, color: AppColors.textMuted),
             ),
             SizedBox(height: 4.h),
@@ -149,19 +125,38 @@ class ProductCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                SizedBox(
-                  width: 32.w,
-                  height: 32.w,
-                  child: IconButton.filled(
-                    padding: EdgeInsets.zero,
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                if (showAddButton)
+                  SizedBox(
+                    width: 32.w,
+                    height: 32.w,
+                    child: IconButton.filled(
+                      padding: EdgeInsets.zero,
+                      style: IconButton.styleFrom(
+                        backgroundColor: canAdd
+                            ? AppColors.primary
+                            : AppColors.textMuted,
+                      ),
+                      onPressed: canAdd
+                          ? () async {
+                              final state = context.read<AppStateProvider>();
+                              await state.addToCart(product.id);
+                              if (!context.mounted || state.lastError == null) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(state.lastError!)),
+                              );
+                            }
+                          : () => ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Only ${product.stock} items available in stock',
+                                ),
+                              ),
+                            ),
+                      icon: Icon(Icons.add, size: 18.sp),
                     ),
-                    onPressed: () =>
-                        context.read<AppStateProvider>().addToCart(product.id),
-                    icon: Icon(Icons.add, size: 18.sp),
                   ),
-                ),
               ],
             ),
           ],

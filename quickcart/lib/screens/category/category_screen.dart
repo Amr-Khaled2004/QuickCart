@@ -35,10 +35,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final arg = ModalRoute.of(context)?.settings.arguments as String?;
     final category = arg ?? 'fruits';
     final provider = context.watch<AppStateProvider>();
-    final categoryProducts = provider.productsByCategory(category);
-    final baseProducts = categoryProducts.isEmpty && category != 'all'
-        ? provider.products
-        : categoryProducts;
+    final baseProducts = provider.productsByCategory(category);
     final query = _query.toLowerCase();
     final products = baseProducts.where((product) {
       final matchesSearch =

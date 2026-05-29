@@ -11,6 +11,8 @@ class CartService {
 
   CollectionReference<Map<String, dynamic>> _cart(String uid) =>
       _firestore.collection('users').doc(uid).collection('cart');
+  DocumentReference<Map<String, dynamic>> _product(String productId) =>
+      _firestore.collection('products').doc(productId);
 
   Stream<List<CartItem>> getCartItems(String uid) {
     return _cart(uid).snapshots().map(
@@ -24,26 +26,42 @@ class CartService {
     int quantity = 1,
   }) async {
     final ref = _cart(uid).doc(product.id);
+    final productRef = _product(product.id);
     await _firestore.runTransaction((transaction) async {
+      final productSnapshot = await transaction.get(productRef);
+      if (!productSnapshot.exists) {
+        throw StateError('Product was not found.');
+      }
+      final latest = productSnapshot.data() ?? {};
+      final stock = ((latest['stock'] as num?) ?? 0).toInt();
+      if (stock <= 0) {
+        throw StateError('Only 0 items available in stock');
+      }
+
       final snapshot = await transaction.get(ref);
+      final current = snapshot.exists
+          ? ((snapshot.data()?['quantity'] as num?) ?? 0).toInt()
+          : 0;
+      final next = current + quantity;
+      if (current >= stock || next > stock) {
+        throw StateError('Only $stock items available in stock');
+      }
+
+      final cartItem = CartItem(
+        productId: product.id,
+        name: (latest['name'] as String?) ?? product.name,
+        price: ((latest['price'] as num?) ?? product.price).toDouble(),
+        imageUrl:
+            (latest['imageUrl'] as String?) ??
+            (latest['image'] as String?) ??
+            product.imageUrl,
+        quantity: next,
+        stock: stock,
+      );
       if (snapshot.exists) {
-        final current = ((snapshot.data()?['quantity'] as num?) ?? 0).toInt();
-        transaction.update(ref, {
-          'quantity': current + quantity,
-          'stock': product.stock,
-        });
+        transaction.update(ref, cartItem.toFirestore());
       } else {
-        transaction.set(
-          ref,
-          CartItem(
-            productId: product.id,
-            name: product.name,
-            price: product.price,
-            imageUrl: product.imageUrl,
-            quantity: quantity,
-            stock: product.stock,
-          ).toFirestore(),
-        );
+        transaction.set(ref, cartItem.toFirestore());
       }
     });
   }

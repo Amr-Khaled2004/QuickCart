@@ -47,7 +47,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         paymentLabel = '${savedMethod.label} ending ${savedMethod.last4}';
       } else {
         if (!(_formKey.currentState?.validate() ?? false)) return;
-        provider.addPaymentMethod(
+        await provider.addPaymentMethod(
           label: _nameController.text.trim().isEmpty
               ? 'Card'
               : _nameController.text.trim(),
@@ -59,12 +59,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
             : '${addedMethod.label} ending ${addedMethod.last4}';
       }
     }
-    await provider.placeOrder(paymentLabel: paymentLabel);
+    final placed = await provider.placeOrder(paymentLabel: paymentLabel);
     if (!mounted) return;
-    if (provider.lastError != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(provider.lastError!)));
+    if (!placed || provider.lastError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.lastError ?? 'Order could not be placed.'),
+        ),
+      );
       return;
     }
     ScaffoldMessenger.of(

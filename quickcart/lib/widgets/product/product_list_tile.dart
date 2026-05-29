@@ -23,6 +23,7 @@ class ProductListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<AppStateProvider>();
     final isFavorite = provider.favorites.contains(product.id);
+    final canAdd = provider.canAddToCart(product.id);
     final imageSize = (68.w * MediaQuery.devicePixelRatioOf(context)).round();
     return InkWell(
       onTap: () => Navigator.pushNamed(
@@ -83,7 +84,9 @@ class ProductListTile extends StatelessWidget {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    '1 kg | Farm raised',
+                    product.stock > 0
+                        ? 'Stock: ${product.stock}'
+                        : 'Out of stock',
                     style: TextStyle(
                       fontSize: 10.5.sp,
                       color: AppColors.textMuted,
@@ -133,11 +136,30 @@ class ProductListTile extends StatelessWidget {
                 else
                   FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: canAdd
+                          ? AppColors.primary
+                          : AppColors.textMuted,
                       minimumSize: Size(58.w, 30.h),
                       padding: EdgeInsets.zero,
                     ),
-                    onPressed: () => provider.addToCart(product.id),
+                    onPressed: canAdd
+                        ? () async {
+                            await provider.addToCart(product.id);
+                            if (!context.mounted ||
+                                provider.lastError == null) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(provider.lastError!)),
+                            );
+                          }
+                        : () => ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Only ${product.stock} items available in stock',
+                              ),
+                            ),
+                          ),
                     child: Text('+ Add', style: TextStyle(fontSize: 10.5.sp)),
                   ),
               ],

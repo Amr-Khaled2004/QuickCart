@@ -12,6 +12,7 @@ class OrderModel {
     required this.address,
     required this.phone,
     required this.createdAt,
+    this.stockRestored = false,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class OrderModel {
   final String address;
   final String phone;
   final DateTime createdAt;
+  final bool stockRestored;
 
   factory OrderModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -47,6 +49,7 @@ class OrderModel {
       address: (data['address'] as String?) ?? '',
       phone: (data['phone'] as String?) ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      stockRestored: (data['stockRestored'] as bool?) ?? false,
     );
   }
 
@@ -59,6 +62,7 @@ class OrderModel {
       'address': address,
       'phone': phone,
       'createdAt': Timestamp.fromDate(createdAt),
+      'stockRestored': stockRestored,
     };
   }
 }

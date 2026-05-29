@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_colors.dart';
+import '../../models/payment_method.dart';
+import '../../models/user_address.dart';
 import '../../providers/app_state_provider.dart';
 import '../../utils/currency.dart';
 import '../../widgets/navigation/quick_bottom_nav.dart';
@@ -445,13 +447,32 @@ class _OrderPanel extends StatelessWidget {
             style: TextStyle(color: AppColors.textMuted, fontSize: 12.sp),
           ),
           SizedBox(height: 8.h),
-          Text(
-            'Total: ${formatEgp(order.total)}',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w900,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Total: ${formatEgp(order.total)}',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              if (order.status != 'cancelled' && order.status != 'delivered')
+                TextButton.icon(
+                  onPressed: () async {
+                    final state = context.read<AppStateProvider>();
+                    await state.cancelUserOrder(order.id);
+                    if (!context.mounted || state.lastError == null) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(state.lastError!)));
+                  },
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Cancel'),
+                ),
+            ],
           ),
         ],
       ),

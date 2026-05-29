@@ -124,6 +124,8 @@ class _CartItem extends StatelessWidget {
       (item) => item.productId == productId,
     );
     final quantity = item.quantity;
+    final stock = provider.stockFor(productId);
+    final canIncrease = quantity < stock;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 18.w, vertical: 6.h),
       padding: EdgeInsets.all(10.w),
@@ -161,6 +163,14 @@ class _CartItem extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Text(
+                  stock > 0 ? 'Stock: $stock' : 'Out of stock',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 Row(
                   children: [
                     _QtyButton(
@@ -179,7 +189,18 @@ class _CartItem extends StatelessWidget {
                     ),
                     _QtyButton(
                       icon: Icons.add,
-                      onTap: () => provider.addToCart(productId),
+                      onTap: canIncrease
+                          ? () async {
+                              await provider.addToCart(productId);
+                              if (!context.mounted ||
+                                  provider.lastError == null) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(provider.lastError!)),
+                              );
+                            }
+                          : null,
                     ),
                   ],
                 ),
@@ -200,7 +221,7 @@ class _QtyButton extends StatelessWidget {
   const _QtyButton({required this.icon, required this.onTap});
 
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +229,11 @@ class _QtyButton extends StatelessWidget {
       dimension: 26.w,
       child: IconButton.filled(
         padding: EdgeInsets.zero,
-        style: IconButton.styleFrom(backgroundColor: AppColors.primary),
+        style: IconButton.styleFrom(
+          backgroundColor: onTap == null
+              ? AppColors.textMuted
+              : AppColors.primary,
+        ),
         onPressed: onTap,
         icon: Icon(icon, size: 14.sp),
       ),

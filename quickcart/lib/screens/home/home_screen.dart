@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../constants/app_colors.dart';
-import '../../data/dummy_data.dart';
+import '../../data/grocery_seed_data.dart';
 import '../../providers/app_state_provider.dart';
 import '../../widgets/common/cart_icon_button.dart';
 import '../../widgets/common/promo_banner.dart';
@@ -246,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             sliver: SliverGrid.builder(
-              itemCount: DummyData.categories.length,
+              itemCount: GrocerySeedData.categories.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: MediaQuery.sizeOf(context).width > 520 ? 4 : 3,
                 crossAxisSpacing: 14.w,
@@ -254,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 childAspectRatio: 1,
               ),
               itemBuilder: (_, index) =>
-                  CategoryTile(category: DummyData.categories[index]),
+                  CategoryTile(category: GrocerySeedData.categories[index]),
             ),
           ),
           SliverToBoxAdapter(

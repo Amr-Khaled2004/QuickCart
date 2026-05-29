@@ -8,6 +8,7 @@ import '../../constants/app_colors.dart';
 import '../../providers/app_state_provider.dart';
 import '../../widgets/common/app_logo.dart';
 import '../../widgets/common/gradient_background.dart';
+import '../admin/admin_products_screen.dart';
 import '../home/home_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -51,19 +52,20 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     final provider = context.read<AppStateProvider>();
-    if (_isSignUp) {
-      await provider.register(name: name, email: email, password: password);
-    } else {
-      await provider.login(email: email, password: password);
-    }
+    final success = _isSignUp
+        ? await provider.register(name: name, email: email, password: password)
+        : await provider.login(email: email, password: password);
     if (!mounted) return;
-    if (provider.lastError != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(provider.lastError!)));
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.lastError ?? 'Login failed.')),
+      );
       return;
     }
-    Navigator.pushReplacementNamed(context, HomeShell.routeName);
+    Navigator.pushReplacementNamed(
+      context,
+      provider.isAdmin ? AdminProductsScreen.routeName : HomeShell.routeName,
+    );
   }
 
   void _resetPassword() {

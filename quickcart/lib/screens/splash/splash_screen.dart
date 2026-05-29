@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_state_provider.dart';
 import '../../widgets/common/app_logo.dart';
 import '../../widgets/common/gradient_background.dart';
+import '../admin/admin_products_screen.dart';
 import '../home/home_shell.dart';
 import '../auth/login_screen.dart';
 
@@ -35,10 +36,12 @@ class _SplashScreenState extends State<SplashScreen>
     _navigationTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) {
         final provider = context.read<AppStateProvider>();
-        Navigator.pushReplacementNamed(
-          context,
-          provider.isLoggedIn ? HomeShell.routeName : LoginScreen.routeName,
-        );
+        final route = provider.isLoggedIn
+            ? provider.isAdmin
+                  ? AdminProductsScreen.routeName
+                  : HomeShell.routeName
+            : LoginScreen.routeName;
+        Navigator.pushReplacementNamed(context, route);
       }
     });
   }

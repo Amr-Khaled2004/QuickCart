@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../data/grocery_seed_data.dart';
 import '../models/product.dart';
 
 class ProductService {
@@ -40,5 +41,32 @@ class ProductService {
         .set(product.toFirestore(), SetOptions(merge: true));
   }
 
+  Future<void> adjustStock({required String id, required int delta}) async {
+    final ref = _products.doc(id);
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(ref);
+      if (!snapshot.exists) {
+        throw StateError('Product was not found.');
+      }
+      final current = ((snapshot.data()?['stock'] as num?) ?? 0).toInt();
+      final next = current + delta;
+      if (next < 0) {
+        throw StateError('Stock cannot be lower than zero.');
+      }
+      transaction.update(ref, {'stock': next});
+    });
+  }
+
   Future<void> deleteProduct(String id) => _products.doc(id).delete();
+
+  Future<void> seedDefaultProductsIfEmpty() async {
+    final existing = await _products.limit(1).get();
+    if (existing.docs.isNotEmpty) return;
+
+    final batch = _firestore.batch();
+    for (final product in GrocerySeedData.products) {
+      batch.set(_products.doc(product.id), product.toFirestore());
+    }
+    await batch.commit();
+  }
 }

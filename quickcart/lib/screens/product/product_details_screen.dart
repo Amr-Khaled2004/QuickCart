@@ -33,6 +33,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         body: SafeArea(child: Center(child: Text('Product not found.'))),
       );
     }
+    if (quantity > product.stock && product.stock > 0) {
+      quantity = product.stock;
+    }
     final related = provider.products
         .where(
           (item) => item.category == product.category && item.id != product.id,
@@ -77,7 +80,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       children: [
                         const Icon(Icons.star, color: AppColors.accent),
                         Text(
-                          ' ${product.rating}  |  Fresh ${product.category}',
+                          ' ${product.rating}  |  Stock: ${product.stock}',
                           style: TextStyle(
                             color: AppColors.textMuted,
                             fontSize: 12.sp,
@@ -110,7 +113,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           onMinus: () => setState(
                             () => quantity = quantity > 1 ? quantity - 1 : 1,
                           ),
-                          onPlus: () => setState(() => quantity++),
+                          onPlus: quantity >= product.stock
+                              ? null
+                              : () => setState(() => quantity++),
                         ),
                         SizedBox(width: 14.w),
                         Expanded(
@@ -119,12 +124,32 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               backgroundColor: AppColors.primary,
                               padding: EdgeInsets.symmetric(vertical: 16.h),
                             ),
-                            onPressed: () {
-                              context.read<AppStateProvider>().addToCart(
-                                product.id,
-                                quantity: quantity,
-                              );
-                            },
+                            onPressed: product.stock <= 0
+                                ? null
+                                : () async {
+                                    final state = context
+                                        .read<AppStateProvider>();
+                                    await state.addToCart(
+                                      product.id,
+                                      quantity: quantity,
+                                    );
+                                    if (!context.mounted) return;
+                                    if (state.lastError != null) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(state.lastError!),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Added to cart.'),
+                                      ),
+                                    );
+                                  },
                             icon: const Icon(Icons.shopping_cart_outlined),
                             label: const Text('Add to cart'),
                           ),
@@ -224,7 +249,7 @@ class _QuantitySelector extends StatelessWidget {
 
   final int quantity;
   final VoidCallback onMinus;
-  final VoidCallback onPlus;
+  final VoidCallback? onPlus;
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +280,7 @@ class _QuantityButton extends StatelessWidget {
   const _QuantityButton({required this.icon, required this.onTap});
 
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +288,11 @@ class _QuantityButton extends StatelessWidget {
       dimension: 34.w,
       child: IconButton.filled(
         padding: EdgeInsets.zero,
-        style: IconButton.styleFrom(backgroundColor: AppColors.primary),
+        style: IconButton.styleFrom(
+          backgroundColor: onTap == null
+              ? AppColors.textMuted
+              : AppColors.primary,
+        ),
         onPressed: onTap,
         icon: Icon(icon, size: 17.sp),
       ),
