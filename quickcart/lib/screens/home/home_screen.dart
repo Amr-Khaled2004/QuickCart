@@ -6,6 +6,8 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../constants/app_colors.dart';
 import '../../data/grocery_seed_data.dart';
+import '../../models/app_notification.dart';
+import '../../models/product.dart';
 import '../../providers/app_state_provider.dart';
 import '../../widgets/common/cart_icon_button.dart';
 import '../../widgets/common/promo_banner.dart';
@@ -126,46 +128,57 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showNotifications() {
-    final orderCount = context.read<AppStateProvider>().orderCount;
+    context.read<AppStateProvider>().markNotificationsRead();
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 24.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Notifications',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w900),
+      builder: (context) => Consumer<AppStateProvider>(
+        builder: (context, provider, _) {
+          final notifications = provider.notifications;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 24.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notifications',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                if (notifications.isEmpty)
+                  const ListTile(
+                    leading: Icon(Icons.notifications_none),
+                    title: Text('No notifications yet.'),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: 360.h),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: notifications.length,
+                      itemBuilder: (_, index) =>
+                          _NotificationTile(notification: notifications[index]),
+                    ),
+                  ),
+              ],
             ),
-            SizedBox(height: 10.h),
-            if (orderCount == 0)
-              const ListTile(
-                leading: Icon(Icons.notifications_none),
-                title: Text('No order notifications yet.'),
-              )
-            else
-              const ListTile(
-                leading: Icon(Icons.local_shipping_outlined),
-                title: Text('Your latest grocery order is being prepared.'),
-              ),
-            const ListTile(
-              leading: Icon(Icons.discount_outlined),
-              title: Text('Fresh fruit deals are live today.'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final allProducts = context.watch<AppStateProvider>().products;
+    final allProducts = context.select<AppStateProvider, List<Product>>(
+      (provider) => provider.products,
+    );
+    final query = _query.toLowerCase();
     final products = allProducts.where((product) {
-      final query = _query.toLowerCase();
       return query.isEmpty ||
           product.name.toLowerCase().contains(query) ||
           product.category.toLowerCase().contains(query);
@@ -330,6 +343,42 @@ class _EmptyProducts extends StatelessWidget {
   }
 }
 
+class _NotificationTile extends StatelessWidget {
+  const _NotificationTile({required this.notification});
+
+  final AppNotification notification;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(switch (notification.type) {
+        'offer' => Icons.local_offer_outlined,
+        'order' => Icons.local_shipping_outlined,
+        _ => Icons.notifications_none,
+      }, color: notification.isRead ? AppColors.textMuted : AppColors.primary),
+      title: Text(
+        notification.title,
+        style: TextStyle(
+          fontWeight: notification.isRead ? FontWeight.w700 : FontWeight.w900,
+        ),
+      ),
+      subtitle: Text(
+        '${notification.body}\n${_relativeTime(notification.createdAt)}',
+      ),
+      isThreeLine: true,
+    );
+  }
+
+  String _relativeTime(DateTime value) {
+    final difference = DateTime.now().difference(value);
+    if (difference.inMinutes < 1) return 'Just now';
+    if (difference.inHours < 1) return '${difference.inMinutes} min ago';
+    if (difference.inDays < 1) return '${difference.inHours} hr ago';
+    return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header({
     required this.onSearchChanged,
@@ -345,7 +394,12 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final address = context.watch<AppStateProvider>().selectedAddress;
+    final address = context.select<AppStateProvider, String?>(
+      (provider) => provider.selectedAddress?.details,
+    );
+    final unreadCount = context.select<AppStateProvider, int>(
+      (provider) => provider.unreadNotificationCount,
+    );
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 22.h),
       decoration: BoxDecoration(
@@ -390,7 +444,7 @@ class _Header extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          address?.details ?? 'Add delivery address',
+                          address ?? 'Add delivery address',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -409,10 +463,44 @@ class _Header extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                tooltip: 'Notifications',
-                onPressed: onNotificationsTap,
-                icon: const Icon(Icons.notifications_none, color: Colors.white),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    tooltip: 'Notifications',
+                    onPressed: onNotificationsTap,
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 5.w,
+                      top: 5.h,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          minWidth: 16.w,
+                          minHeight: 16.w,
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: Colors.white, width: 1.3),
+                        ),
+                        child: Text(
+                          unreadCount > 99 ? '99+' : '$unreadCount',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               CartIconButton(onPressed: onCartTap),
             ],

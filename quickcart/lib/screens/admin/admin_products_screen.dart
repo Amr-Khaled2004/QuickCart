@@ -1041,6 +1041,7 @@ class _OrderStatusPanel extends StatelessWidget {
     const statuses = [
       'pending',
       'preparing',
+      'picked_up',
       'shipped',
       'delivered',
       'cancelled',
@@ -1107,6 +1108,7 @@ class _StatusRow extends StatelessWidget {
 const _orderStatuses = [
   'pending',
   'preparing',
+  'picked_up',
   'shipped',
   'delivered',
   'cancelled',

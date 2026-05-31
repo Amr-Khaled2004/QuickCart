@@ -21,9 +21,12 @@ class ProductListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppStateProvider>();
-    final isFavorite = provider.favorites.contains(product.id);
-    final canAdd = provider.canAddToCart(product.id);
+    final isFavorite = context.select<AppStateProvider, bool>(
+      (provider) => provider.favorites.contains(product.id),
+    );
+    final canAdd = context.select<AppStateProvider, bool>(
+      (provider) => provider.canAddToCart(product.id),
+    );
     final imageSize = (68.w * MediaQuery.devicePixelRatioOf(context)).round();
     return InkWell(
       onTap: () => Navigator.pushNamed(
@@ -126,7 +129,9 @@ class ProductListTile extends StatelessWidget {
                     style: IconButton.styleFrom(
                       backgroundColor: AppColors.primary,
                     ),
-                    onPressed: () => provider.toggleFavorite(product.id),
+                    onPressed: () => context
+                        .read<AppStateProvider>()
+                        .toggleFavorite(product.id),
                     icon: Icon(
                       isFavorite ? Icons.favorite : Icons.favorite_border,
                       color: Colors.red,
@@ -144,6 +149,7 @@ class ProductListTile extends StatelessWidget {
                     ),
                     onPressed: canAdd
                         ? () async {
+                            final provider = context.read<AppStateProvider>();
                             await provider.addToCart(product.id);
                             if (!context.mounted ||
                                 provider.lastError == null) {

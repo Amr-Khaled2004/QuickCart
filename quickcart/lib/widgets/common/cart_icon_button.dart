@@ -17,7 +17,9 @@ class CartIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = context.watch<AppStateProvider>().cartItemCount;
+    final count = context.select<AppStateProvider, int>(
+      (provider) => provider.cartItemCount,
+    );
     return Stack(
       clipBehavior: Clip.none,
       children: [

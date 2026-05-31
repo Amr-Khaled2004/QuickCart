@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/app_user.dart';
+import '../models/app_notification.dart';
 import '../models/cart_item.dart';
 import '../models/order_model.dart';
 import '../models/payment_method.dart';
@@ -11,6 +12,7 @@ import '../models/product.dart';
 import '../models/user_address.dart';
 import '../services/auth_service.dart';
 import '../services/cart_service.dart';
+import '../services/notification_service.dart';
 import '../services/order_service.dart';
 import '../services/product_service.dart';
 import '../services/user_data_service.dart';
@@ -42,11 +44,13 @@ class AppStateProvider extends ChangeNotifier {
     CartService? cartService,
     OrderService? orderService,
     UserDataService? userDataService,
+    NotificationService? notificationService,
   }) : _authService = authService ?? AuthService(),
        _productService = productService ?? ProductService(),
        _cartService = cartService ?? CartService(),
        _orderService = orderService ?? OrderService(),
-       _userDataService = userDataService ?? UserDataService() {
+       _userDataService = userDataService ?? UserDataService(),
+       _notificationService = notificationService ?? NotificationService() {
     _productsSub = _productService.getProducts().listen(
       (products) {
         _products = products;
@@ -65,6 +69,7 @@ class AppStateProvider extends ChangeNotifier {
   final CartService _cartService;
   final OrderService _orderService;
   final UserDataService _userDataService;
+  final NotificationService _notificationService;
 
   StreamSubscription<User?>? _authSub;
   StreamSubscription<List<Product>>? _productsSub;
@@ -74,6 +79,7 @@ class AppStateProvider extends ChangeNotifier {
   StreamSubscription<List<UserAddress>>? _addressesSub;
   StreamSubscription<List<PaymentMethod>>? _paymentMethodsSub;
   StreamSubscription<Set<String>>? _favoritesSub;
+  StreamSubscription<List<AppNotification>>? _notificationsSub;
 
   int _tabIndex = 0;
   String _userName = 'Guest';
@@ -88,6 +94,7 @@ class AppStateProvider extends ChangeNotifier {
   final Set<String> _favorites = {};
   final Map<String, int> _cart = {};
   final List<OrderRecord> _orders = [];
+  List<AppNotification> _notifications = [];
   List<OrderModel> _adminOrders = [];
   List<UserAddress> _addresses = [];
   final List<PaymentMethod> _paymentMethods = [];
@@ -108,6 +115,7 @@ class AppStateProvider extends ChangeNotifier {
   Set<String> get favorites => _favorites;
   Map<String, int> get cart => _cart;
   List<OrderRecord> get orders => _orders;
+  List<AppNotification> get notifications => _notifications;
   List<OrderModel> get adminOrders => _adminOrders;
   List<UserAddress> get addresses => _addresses;
   List<PaymentMethod> get paymentMethods => _paymentMethods;
@@ -132,8 +140,10 @@ class AppStateProvider extends ChangeNotifier {
   int get cartItemCount =>
       _cart.values.fold(0, (sum, quantity) => sum + quantity);
   int get orderCount => _orders.length;
+  int get unreadNotificationCount =>
+      _notifications.where((notification) => !notification.isRead).length;
   int get points => _orders
-      .where((order) => order.status != 'cancelled')
+      .where((order) => order.status == 'delivered')
       .fold<double>(0, (sum, order) => sum + order.total)
       .round();
 
@@ -403,12 +413,21 @@ class AppStateProvider extends ChangeNotifier {
 
   Future<void> addProduct(Product product) {
     if (!isAdmin) return _adminOnlyAction();
-    return _guard(() => _productService.addProduct(product));
+    return _guard(() async {
+      final id = await _productService.addProduct(product);
+      await _notifyOffer(product.copyWith(id: id));
+    });
   }
 
   Future<void> updateProduct(Product product) {
     if (!isAdmin) return _adminOnlyAction();
-    return _guard(() => _productService.updateProduct(product));
+    final previous = productById(product.id);
+    return _guard(() async {
+      await _productService.updateProduct(product);
+      if (_shouldNotifyOffer(previous, product)) {
+        await _notifyOffer(product);
+      }
+    });
   }
 
   Future<void> deleteProduct(String id) {
@@ -469,9 +488,11 @@ class AppStateProvider extends ChangeNotifier {
     await _addressesSub?.cancel();
     await _paymentMethodsSub?.cancel();
     await _favoritesSub?.cancel();
+    await _notificationsSub?.cancel();
     _cartItems = [];
     _orders.clear();
     _adminOrders = [];
+    _notifications = [];
     _cart.clear();
     _favorites.clear();
     _addresses = [];
@@ -507,6 +528,7 @@ class AppStateProvider extends ChangeNotifier {
     }
 
     _listenToSavedUserData(firebaseUser.uid);
+    _listenToNotifications(firebaseUser.uid);
 
     _cartSub = _cartService
         .getCartItems(firebaseUser.uid)
@@ -616,6 +638,55 @@ class AppStateProvider extends ChangeNotifier {
         );
   }
 
+  void _listenToNotifications(String uid) {
+    _notificationsSub = _notificationService
+        .getNotifications(uid)
+        .listen(
+          (notifications) {
+            _notifications = notifications;
+            notifyListeners();
+          },
+          onError: (Object error) {
+            if (_isPermissionDenied(error)) return;
+            _lastError = _messageFor(error);
+            notifyListeners();
+          },
+        );
+  }
+
+  Future<void> markNotificationsRead() async {
+    final uid = _uid;
+    if (uid == null || unreadNotificationCount == 0) return;
+    try {
+      await _notificationService.markAllRead(uid);
+    } catch (error) {
+      if (!_isPermissionDenied(error)) {
+        _lastError = _messageFor(error);
+        notifyListeners();
+      }
+    }
+  }
+
+  bool _shouldNotifyOffer(Product? previous, Product product) {
+    if (product.discount <= 0) return false;
+    return previous == null ||
+        previous.discount != product.discount ||
+        previous.price != product.price;
+  }
+
+  Future<void> _notifyOffer(Product product) async {
+    if (product.discount <= 0) return;
+    try {
+      await _notificationService.createForCustomers(
+        title: '${product.discount}% off ${product.name}',
+        body: 'Limited offer is live now. Add it to your cart while it lasts.',
+        productId: product.id.isEmpty ? null : product.id,
+      );
+    } catch (error) {
+      if (!_isPermissionDenied(error)) rethrow;
+    }
+  }
+
   void _applyUser(AppUser user) {
     _userName = user.name.trim().isEmpty
         ? user.email.split('@').first
@@ -715,6 +786,10 @@ class AppStateProvider extends ChangeNotifier {
         .replaceFirst('Bad state: ', '');
   }
 
+  bool _isPermissionDenied(Object error) {
+    return error is FirebaseException && error.code == 'permission-denied';
+  }
+
   @override
   void dispose() {
     _authSub?.cancel();
@@ -725,6 +800,7 @@ class AppStateProvider extends ChangeNotifier {
     _addressesSub?.cancel();
     _paymentMethodsSub?.cancel();
     _favoritesSub?.cancel();
+    _notificationsSub?.cancel();
     super.dispose();
   }
 }

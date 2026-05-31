@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_colors.dart';
+import '../../models/cart_item.dart';
 import '../../providers/app_state_provider.dart';
 import '../../utils/currency.dart';
 import '../../widgets/common/quick_search_field.dart';
@@ -18,9 +19,15 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppStateProvider>();
-    final items = provider.cartItems;
-    final subtotal = provider.cartSubtotal;
+    final items = context.select<AppStateProvider, List<CartItem>>(
+      (provider) => provider.cartItems,
+    );
+    final subtotal = context.select<AppStateProvider, double>(
+      (provider) => provider.cartSubtotal,
+    );
+    final deliveryFee = context.select<AppStateProvider, double>(
+      (provider) => provider.deliveryFee,
+    );
     return Scaffold(
       bottomNavigationBar: showNav ? const QuickBottomNav() : null,
       body: SafeArea(
@@ -85,12 +92,13 @@ class CartScreen extends StatelessWidget {
                 ),
               )
             else
-              for (final item in items) _CartItem(productId: item.productId),
+              for (final item in items)
+                _CartItem(key: ValueKey(item.productId), item: item),
             Padding(
               padding: EdgeInsets.all(18.w),
               child: const QuickSearchField(hint: 'Enter promo code'),
             ),
-            _Summary(subtotal: subtotal, delivery: provider.deliveryFee),
+            _Summary(subtotal: subtotal, delivery: deliveryFee),
             Padding(
               padding: EdgeInsets.all(18.w),
               child: FilledButton(
@@ -113,18 +121,18 @@ class CartScreen extends StatelessWidget {
 }
 
 class _CartItem extends StatelessWidget {
-  const _CartItem({required this.productId});
+  const _CartItem({super.key, required this.item});
 
-  final String productId;
+  final CartItem item;
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppStateProvider>();
-    final item = provider.cartItems.firstWhere(
-      (item) => item.productId == productId,
+    final productId = item.productId;
+    final stock = context.select<AppStateProvider, int>(
+      (provider) => provider.stockFor(productId),
     );
+    final provider = context.read<AppStateProvider>();
     final quantity = item.quantity;
-    final stock = provider.stockFor(productId);
     final canIncrease = quantity < stock;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 18.w, vertical: 6.h),

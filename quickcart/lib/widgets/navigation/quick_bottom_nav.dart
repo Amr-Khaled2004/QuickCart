@@ -10,8 +10,12 @@ class QuickBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = context.watch<AppStateProvider>().tabIndex;
-    final cartCount = context.watch<AppStateProvider>().cartItemCount;
+    final selected = context.select<AppStateProvider, int>(
+      (provider) => provider.tabIndex,
+    );
+    final cartCount = context.select<AppStateProvider, int>(
+      (provider) => provider.cartItemCount,
+    );
     return NavigationBar(
       height: 62.h,
       backgroundColor: Colors.white,

@@ -25,8 +25,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppStateProvider>();
-    final canAdd = provider.canAddToCart(product.id);
+    final canAdd = context.select<AppStateProvider, bool>(
+      (provider) => provider.canAddToCart(product.id),
+    );
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final imageWidth = ((compact ? 150.w : 180.w) * pixelRatio).round();
     final hasDiscount = product.discount > 0;

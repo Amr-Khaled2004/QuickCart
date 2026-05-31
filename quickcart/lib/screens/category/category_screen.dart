@@ -33,8 +33,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
   Widget build(BuildContext context) {
     final arg = ModalRoute.of(context)?.settings.arguments as String?;
     final category = arg ?? 'fruits';
-    final provider = context.watch<AppStateProvider>();
-    final baseProducts = provider.productsByCategory(category);
+    final allProducts = context.select<AppStateProvider, List<Product>>(
+      (provider) => provider.products,
+    );
+    final baseProducts = category == 'all' || category == 'organic'
+        ? allProducts
+        : allProducts.where((product) => product.category == category).toList();
     final query = _query.toLowerCase();
     final products = baseProducts.where((product) {
       final matchesSearch =
