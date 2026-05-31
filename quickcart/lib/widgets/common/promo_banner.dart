@@ -9,12 +9,14 @@ class PromoBanner extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.icon,
+    this.margin,
     this.onTap,
   });
 
   final String title;
   final String subtitle;
   final IconData icon;
+  final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
 
   @override
@@ -23,7 +25,7 @@ class PromoBanner extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(22.r),
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 4.w),
+        margin: margin ?? EdgeInsets.symmetric(horizontal: 4.w),
         padding: EdgeInsets.fromLTRB(18.w, 16.h, 16.w, 16.h),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22.r),

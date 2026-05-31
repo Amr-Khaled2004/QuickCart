@@ -171,6 +171,9 @@ class _HomeScreenState extends State<HomeScreen> {
           product.category.toLowerCase().contains(query);
     }).toList();
     final visibleProducts = products.isEmpty ? allProducts : products;
+    final flashSaleProducts = visibleProducts
+        .where((product) => product.discount > 0)
+        .toList();
     return SafeArea(
       child: CustomScrollView(
         slivers: [
@@ -270,16 +273,16 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverToBoxAdapter(
             child: SizedBox(
               height: 222.h,
-              child: visibleProducts.isEmpty
+              child: flashSaleProducts.isEmpty
                   ? const _EmptyProducts()
                   : ListView.separated(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       scrollDirection: Axis.horizontal,
-                      itemCount: visibleProducts.take(4).length,
+                      itemCount: flashSaleProducts.take(4).length,
                       separatorBuilder: (context, index) =>
                           SizedBox(width: 14.w),
                       itemBuilder: (_, index) => ProductCard(
-                        product: visibleProducts[index],
+                        product: flashSaleProducts[index],
                         compact: true,
                       ),
                     ),

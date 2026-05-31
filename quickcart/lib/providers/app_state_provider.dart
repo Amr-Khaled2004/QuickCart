@@ -132,7 +132,10 @@ class AppStateProvider extends ChangeNotifier {
   int get cartItemCount =>
       _cart.values.fold(0, (sum, quantity) => sum + quantity);
   int get orderCount => _orders.length;
-  int get points => _orders.length * 20;
+  int get points => _orders
+      .where((order) => order.status != 'cancelled')
+      .fold<double>(0, (sum, order) => sum + order.total)
+      .round();
 
   List<Product> get favoriteProducts =>
       _products.where((product) => _favorites.contains(product.id)).toList();

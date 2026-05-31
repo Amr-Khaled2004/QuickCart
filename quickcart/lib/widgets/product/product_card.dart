@@ -29,6 +29,10 @@ class ProductCard extends StatelessWidget {
     final canAdd = provider.canAddToCart(product.id);
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final imageWidth = ((compact ? 150.w : 180.w) * pixelRatio).round();
+    final hasDiscount = product.discount > 0;
+    final beforePrice = hasDiscount
+        ? product.price / (1 - product.discount / 100)
+        : product.price;
     return InkWell(
       borderRadius: BorderRadius.circular(18.r),
       onTap: () => Navigator.pushNamed(
@@ -54,54 +58,51 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: heroEnabled
-                  ? Hero(
-                      tag: 'product-${product.id}',
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14.r),
-                        child: CachedNetworkImage(
-                          imageUrl: product.image,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                          memCacheWidth: imageWidth,
-                          placeholder: (context, url) => Container(
-                            color: AppColors.pinkBackground.withValues(
-                              alpha: 0.35,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: heroEnabled
+                        ? Hero(
+                            tag: 'product-${product.id}',
+                            child: _ProductImage(
+                              product: product,
+                              imageWidth: imageWidth,
                             ),
+                          )
+                        : _ProductImage(
+                            product: product,
+                            imageWidth: imageWidth,
                           ),
-                          errorWidget: (context, url, error) => Container(
-                            color: AppColors.pinkBackground.withValues(
-                              alpha: 0.35,
-                            ),
-                            child: const Icon(Icons.image_not_supported),
-                          ),
+                  ),
+                  if (hasDiscount)
+                    Positioned(
+                      left: 8.w,
+                      bottom: -10.h,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 7.w,
+                          vertical: 3.h,
                         ),
-                      ),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(14.r),
-                      child: CachedNetworkImage(
-                        imageUrl: product.image,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        memCacheWidth: imageWidth,
-                        placeholder: (context, url) => Container(
-                          color: AppColors.pinkBackground.withValues(
-                            alpha: 0.35,
-                          ),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.pinkBackground.withValues(
-                            alpha: 0.35,
+                        child: Text(
+                          '-${product.discount}%',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
                           ),
-                          child: const Icon(Icons.image_not_supported),
                         ),
                       ),
                     ),
+                ],
+              ),
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: hasDiscount ? 14.h : 10.h),
             Text(
               product.name,
               maxLines: 1,
@@ -115,16 +116,40 @@ class ProductCard extends StatelessWidget {
             ),
             SizedBox(height: 4.h),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  formatEgp(product.price),
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w900,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        formatEgp(product.price),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      if (hasDiscount)
+                        Text(
+                          formatEgp(beforePrice),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w800,
+                            decoration: TextDecoration.lineThrough,
+                            decorationThickness: 2,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const Spacer(),
+                SizedBox(width: 6.w),
                 if (showAddButton)
                   SizedBox(
                     width: 32.w,
@@ -160,6 +185,33 @@ class ProductCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({required this.product, required this.imageWidth});
+
+  final Product product;
+  final int imageWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14.r),
+      child: CachedNetworkImage(
+        imageUrl: product.image,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        memCacheWidth: imageWidth,
+        placeholder: (context, url) =>
+            Container(color: AppColors.pinkBackground.withValues(alpha: 0.35)),
+        errorWidget: (context, url, error) => Container(
+          color: AppColors.pinkBackground.withValues(alpha: 0.35),
+          child: const Icon(Icons.image_not_supported),
         ),
       ),
     );

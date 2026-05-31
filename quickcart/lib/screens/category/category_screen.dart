@@ -23,7 +23,6 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   String _query = '';
-  String _filter = 'All';
 
   void _openCart() {
     context.read<AppStateProvider>().setTab(1);
@@ -42,17 +41,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
           query.isEmpty ||
           product.name.toLowerCase().contains(query) ||
           product.category.toLowerCase().contains(query);
-      final matchesFilter = switch (_filter) {
-        'Tropical' =>
-          product.name.toLowerCase().contains('watermelon') ||
-              product.name.toLowerCase().contains('grapes'),
-        'Organic' =>
-          product.category == 'fruits' || product.category == 'vegetables',
-        'On Sale' => product.discount > 0,
-        _ => true,
-      };
-      return matchesSearch && matchesFilter;
+      return matchesSearch;
     }).toList();
+    final featuredProducts = products
+        .where((product) => product.discount > 0)
+        .toList();
+    final banner = _bannerFor(category);
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -73,29 +67,28 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             ),
             SliverToBoxAdapter(
-              child: _FilterChips(
-                selected: _filter,
-                onSelected: (value) => setState(() => _filter = value),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: PromoBanner(
-                title: 'Tropical Fruits\nBuy 2 Get 1 Free',
-                subtitle: 'This week only!',
-                icon: Icons.local_florist,
-                onTap: () => setState(() => _filter = 'Tropical'),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(18.w, 14.h, 18.w, 0),
+                child: PromoBanner(
+                  title: banner.title,
+                  subtitle: banner.subtitle,
+                  icon: banner.icon,
+                  margin: EdgeInsets.zero,
+                  onTap: () {},
+                ),
               ),
             ),
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Featured',
                 onActionTap: () => setState(() {
-                  _filter = 'All';
                   _query = '';
                 }),
               ),
             ),
-            SliverToBoxAdapter(child: _FeaturedList(products: products)),
+            SliverToBoxAdapter(
+              child: _FeaturedList(products: featuredProducts),
+            ),
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'All ${_label(category)}',
@@ -128,6 +121,46 @@ class _CategoryScreenState extends State<CategoryScreen> {
     if (value == 'all') return 'Products';
     if (value == 'organic') return 'Organic';
     return value[0].toUpperCase() + value.substring(1);
+  }
+
+  _CategoryBannerInfo _bannerFor(String category) {
+    return switch (category) {
+      'fruits' => const _CategoryBannerInfo(
+        title: 'Tropical Fruits\nBuy 2 Get 1 Free',
+        subtitle: 'Sweet picks for today only',
+        icon: Icons.local_florist,
+      ),
+      'vegetables' => const _CategoryBannerInfo(
+        title: 'Crisp Veggies\nFresh From The Farm',
+        subtitle: 'Stock up on greens and roots',
+        icon: Icons.eco_outlined,
+      ),
+      'dairy' => const _CategoryBannerInfo(
+        title: 'Dairy Essentials\nCold And Creamy',
+        subtitle: 'Milk, eggs, cheese, and more',
+        icon: Icons.local_drink_outlined,
+      ),
+      'meat' => const _CategoryBannerInfo(
+        title: 'Butcher Picks\nReady For Dinner',
+        subtitle: 'Fresh cuts for easy meals',
+        icon: Icons.set_meal_outlined,
+      ),
+      'bakery' => const _CategoryBannerInfo(
+        title: 'Bakery Fresh\nWarm Loaves Await',
+        subtitle: 'Toast, baguettes, and buttery bites',
+        icon: Icons.bakery_dining_outlined,
+      ),
+      'snacks' => const _CategoryBannerInfo(
+        title: 'New Chocolate\nJust Dropped!',
+        subtitle: 'Sweet snacks for your cart',
+        icon: Icons.cookie_outlined,
+      ),
+      _ => const _CategoryBannerInfo(
+        title: 'Exclusive Deals\nFresh Finds Today',
+        subtitle: 'Browse QuickCart favorites',
+        icon: Icons.local_offer_outlined,
+      ),
+    };
   }
 }
 
@@ -173,42 +206,6 @@ class _CategoryHeader extends StatelessWidget {
   }
 }
 
-class _FilterChips extends StatelessWidget {
-  const _FilterChips({required this.selected, required this.onSelected});
-
-  final String selected;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    const filters = ['All', 'Tropical', 'Organic', 'On Sale'];
-    return SizedBox(
-      height: 56.h,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 12.h),
-        scrollDirection: Axis.horizontal,
-        itemCount: filters.length,
-        separatorBuilder: (context, index) => SizedBox(width: 8.w),
-        itemBuilder: (_, index) => ChoiceChip(
-          label: Text(filters[index]),
-          selected: selected == filters[index],
-          onSelected: (_) => onSelected(filters[index]),
-          selectedColor: AppColors.primary,
-          backgroundColor: Colors.white,
-          labelStyle: TextStyle(
-            color: selected == filters[index]
-                ? Colors.white
-                : AppColors.textDark,
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w700,
-          ),
-          side: BorderSide.none,
-        ),
-      ),
-    );
-  }
-}
-
 class _FeaturedList extends StatelessWidget {
   const _FeaturedList({required this.products});
 
@@ -224,7 +221,7 @@ class _FeaturedList extends StatelessWidget {
         itemCount: products.take(3).length,
         separatorBuilder: (context, index) => SizedBox(width: 10.w),
         itemBuilder: (_, index) => SizedBox(
-          width: 132.w,
+          width: 150.w,
           child: ProductCard(
             product: products[index],
             compact: true,
@@ -234,4 +231,16 @@ class _FeaturedList extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CategoryBannerInfo {
+  const _CategoryBannerInfo({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
 }

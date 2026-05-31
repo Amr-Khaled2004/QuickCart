@@ -54,7 +54,9 @@ class OrderService {
       }
 
       for (final item in items) {
-        transaction.update(productRefs[item.productId]!, {
+        final productRef = productRefs[item.productId];
+        if (productRef == null) continue;
+        transaction.update(productRef, {
           'stock': FieldValue.increment(-item.quantity),
         });
       }
@@ -134,7 +136,10 @@ class OrderService {
       }
 
       for (final item in items) {
-        transaction.update(productRefs[item.productId]!, {
+        if (item.productId.isEmpty || item.quantity <= 0) continue;
+        final productRef = productRefs[item.productId];
+        if (productRef == null) continue;
+        transaction.update(productRef, {
           'stock': FieldValue.increment(item.quantity),
         });
       }
@@ -180,7 +185,10 @@ class OrderService {
       }
 
       for (final item in items) {
-        transaction.update(productRefs[item.productId]!, {
+        if (item.productId.isEmpty || item.quantity <= 0) continue;
+        final productRef = productRefs[item.productId];
+        if (productRef == null) continue;
+        transaction.update(productRef, {
           'stock': FieldValue.increment(item.quantity),
         });
       }
@@ -215,7 +223,10 @@ class OrderService {
         }
 
         for (final item in items) {
-          transaction.update(productRefs[item.productId]!, {
+          if (item.productId.isEmpty || item.quantity <= 0) continue;
+          final productRef = productRefs[item.productId];
+          if (productRef == null) continue;
+          transaction.update(productRef, {
             'stock': FieldValue.increment(item.quantity),
           });
         }

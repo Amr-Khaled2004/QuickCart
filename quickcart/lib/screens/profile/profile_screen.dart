@@ -26,26 +26,35 @@ class ProfileScreen extends StatelessWidget {
     void showProfilePanel(String title, List<Widget> children) {
       showModalBottomSheet<void>(
         context: context,
+        isScrollControlled: true,
         showDragHandle: true,
-        builder: (context) => Padding(
-          padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 24.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textDark,
+        builder: (context) {
+          final maxHeight = MediaQuery.sizeOf(context).height * 0.82;
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 24.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    ...children,
+                  ],
                 ),
               ),
-              SizedBox(height: 12.h),
-              ...children,
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
     }
 
